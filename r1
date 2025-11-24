@@ -1,0 +1,32 @@
+ma_crossover_signals <- function(price, fast_n = 20, slow_n = 60) {
+  n <- length(price)
+  
+  # Pre-allocate moving averages with NA
+  fast_ma <- rep(NA_real_, n)
+  slow_ma <- rep(NA_real_, n)
+  
+  # ----- manual fast MA -----
+  if (fast_n <= n) {
+    for (i in fast_n:n) {
+      fast_ma[i] <- mean(price[(i - fast_n + 1):i], na.rm = TRUE)
+    }
+  }
+  
+  # ----- manual slow MA -----
+  if (slow_n <= n) {
+    for (i in slow_n:n) {
+      slow_ma[i] <- mean(price[(i - slow_n + 1):i], na.rm = TRUE)
+    }
+  }
+  
+  # Signals: 1 if fast > slow, -1 otherwise
+  signal_raw <- ifelse(fast_ma > slow_ma, 1, -1)
+  
+  # Lag by 1 day to avoid look-ahead bias (use dplyr::lag on a plain vector)
+  signal <- dplyr::lag(signal_raw, 1)
+  
+  # Replace NAs with 0 = "no position"
+  signal[is.na(signal)] <- 0
+  
+  return(as.numeric(signal))
+}
